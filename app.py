@@ -1,10 +1,11 @@
 import os
+from database import criar_tabelas, conectar
 
-restaurantes = [
+"""restaurantes = [
     {"nome": "Restaurante A", "categoria": "Italiana", "ativo": False}, 
     {"nome": "Restaurante B", "categoria": "Brasileira", "ativo": True}, 
     {"nome": "Restaurante C", "categoria": "Japonesa", "ativo": False}
-]
+]"""
 
 def exibir_nome_app():
     print("""
@@ -45,18 +46,36 @@ def escolher_opcao():
         return False
 
 def cadastrar_restaurante():
-    nome_do_restaurante = input("Digite o nome do restaurante que deseja cadastrar: ")
-    categoria = input(f"Digite a categoria do restaurante {nome_do_restaurante}: ")
-    dados_do_restaurante = {"nome": nome_do_restaurante, "categoria": categoria, "ativo": False}
-    restaurantes.append(dados_do_restaurante)
-    return nome_do_restaurante
+    nome = input("Digite o nome do restaurante: ")
+    categoria = input(f"Digite a categoria do restaurante {nome}: ")
+
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+        INSERT INTO restaurantes (nome, categoria, ativo)
+        VALUES (?, ?, ?)
+    """, (nome, categoria, 0))
+
+    conexao.commit()
+    conexao.close()
+
+    return nome
 
 def listar_restaurantes():
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("SELECT * FROM restaurantes")
+    restaurantes = cursor.fetchall()
+    conexao.close()
+
     for restaurante in restaurantes:
-        nome = restaurante['nome']
-        categoria = restaurante['categoria']
-        ativo = 'Ativo' if restaurante['ativo'] else 'Inativo'
-        print(f"- {nome.ljust(20)} | {categoria.ljust(20)} | {ativo.ljust(10)}")
+        nome = restaurante[1]
+        categoria = restaurante[2]
+        ativo = bool(restaurante[3])
+        status = "Ativo" if ativo else "Inativo"
+        print(f"- {nome.ljust(20)} | {categoria.ljust(20)} | {status}")
 
 def voltar_menu():
     input("\nPressione Enter para continuar...")
@@ -66,14 +85,35 @@ def exibir_subtitulo(txt):
     print(f"\n--- {txt} ---\n")
 
 def alterar_status_restaurante(nome_restaurante):
-    for restaurante in restaurantes:
-        if restaurante['nome'].lower() == nome_restaurante.lower():
-            restaurante['ativo'] = not restaurante['ativo']
-            return restaurante['ativo']
-    return None
+    conexao = conectar()
+    cursor = conexao.cursor()
+
+    cursor.execute("""
+        SELECT ativo FROM restaurantes WHERE nome = ?
+    """, (nome_restaurante,))
+
+    resultado = cursor.fetchone()
+
+    if resultado is None:
+        conexao.close()
+        return None
+
+    novo_status = 0 if resultado[0] else 1
+
+    cursor.execute("""
+        UPDATE restaurantes
+        SET ativo = ?
+        WHERE nome = ?
+    """, (novo_status, nome_restaurante))
+
+    conexao.commit()
+    conexao.close()
+
+    return bool(novo_status)
 
 
 def main():
+        criar_tabelas()
         while True:
             os.system('cls')
             sair = False
