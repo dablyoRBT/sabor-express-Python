@@ -70,8 +70,7 @@ def alterar_status_restaurante(nome_restaurante):
         if restaurante['nome'].lower() == nome_restaurante.lower():
             restaurante['ativo'] = not restaurante['ativo']
             return restaurante['ativo']
-        else:
-            return None
+    return None
 
 
 def main():
