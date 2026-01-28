@@ -1,164 +1,129 @@
-import os
-from database import criar_tabelas, conectar
-
-"""restaurantes = [
-    {"nome": "Restaurante A", "categoria": "Italiana", "ativo": False}, 
-    {"nome": "Restaurante B", "categoria": "Brasileira", "ativo": True}, 
-    {"nome": "Restaurante C", "categoria": "Japonesa", "ativo": False}
-]"""
-
-def exibir_nome_app():
-    print("""
-    ░██████╗░█████╗░██████╗░░█████╗░██████╗░  ███████╗██╗░░██╗██████╗░██████╗░███████╗░██████╗░██████╗
-    ██╔════╝██╔══██╗██╔══██╗██╔══██╗██╔══██╗  ██╔════╝╚██╗██╔╝██╔══██╗██╔══██╗██╔════╝██╔════╝██╔════╝
-    ╚█████╗░███████║██████╦╝██║░░██║██████╔╝  █████╗░░░╚███╔╝░██████╔╝██████╔╝█████╗░░╚█████╗░╚█████╗░
-    ░╚═══██╗██╔══██║██╔══██╗██║░░██║██╔══██╗  ██╔══╝░░░██╔██╗░██╔═══╝░██╔══██╗██╔══╝░░░╚═══██╗░╚═══██╗
-    ██████╔╝██║░░██║██████╦╝╚█████╔╝██║░░██║  ███████╗██╔╝╚██╗██║░░░░░██║░░██║███████╗██████╔╝██████╔╝
-    ╚═════╝░╚═╝░░╚═╝╚═════╝░░╚════╝░╚═╝░░╚═╝  ╚══════╝╚═╝░░╚═╝╚═╝░░░░░╚═╝░░╚═╝╚══════╝╚═════╝░╚═════╝░  
-    """)
-
-def exibir_menu_opcoes():
-    print("1. Cadastrar restaurante")
-    print("2. Listar restaurante")
-    print("3. Alterar status do restaurante")
-    print("4. Sair\n")
-
-def finalizar_app():
-    os.system('cls')
-    print("Encerrando o programa...\n")
-    return True
+from database import criar_tabelas
+from ui import *
+from services import *
 
 def escolher_opcao():
     try:
         opcao_escolhida = int(input("Escolha uma opção: "))
         match opcao_escolhida:
-            case 1:
-                return 1
-            case 2:
-                return 2
-            case 3:
-                return 3
-            case 4:
-                return 4
-            case _:
-                return False
+            case 1: return 1
+            case 2: return 2
+            case 3: return 3
+            case 4: return 4
+            case 5: return 5
+            case 6: return 6
+            case _: return False
     except ValueError:
         return False
 
-def cadastrar_restaurante():
-    nome = input("Digite o nome do restaurante: ")
-    categoria = input(f"Digite a categoria do restaurante {nome}: ")
-
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
-        INSERT INTO restaurantes (nome, categoria, ativo)
-        VALUES (?, ?, ?)
-    """, (nome, categoria, 0))
-
-    conexao.commit()
-    conexao.close()
-
-    return nome
-
-def listar_restaurantes():
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("SELECT * FROM restaurantes")
-    restaurantes = cursor.fetchall()
-    conexao.close()
-
-    for restaurante in restaurantes:
-        nome = restaurante[1]
-        categoria = restaurante[2]
-        ativo = bool(restaurante[3])
-        status = "Ativo" if ativo else "Inativo"
-        print(f"- {nome.ljust(20)} | {categoria.ljust(20)} | {status}")
-
-def voltar_menu():
-    input("\nPressione Enter para continuar...")
-
-def exibir_subtitulo(txt):
-    os.system('cls')
-    print(f"\n--- {txt} ---\n")
-
-def alterar_status_restaurante(nome_restaurante):
-    conexao = conectar()
-    cursor = conexao.cursor()
-
-    cursor.execute("""
-        SELECT ativo FROM restaurantes WHERE nome = ?
-    """, (nome_restaurante,))
-
-    resultado = cursor.fetchone()
-
-    if resultado is None:
-        conexao.close()
-        return None
-
-    novo_status = 0 if resultado[0] else 1
-
-    cursor.execute("""
-        UPDATE restaurantes
-        SET ativo = ?
-        WHERE nome = ?
-    """, (novo_status, nome_restaurante))
-
-    conexao.commit()
-    conexao.close()
-
-    return bool(novo_status)
-
-
 def main():
-        criar_tabelas()
+    criar_tabelas()
+
+    while True:
+        os.system('cls')
+        sair = False
+        exibir_nome_app()
+        exibir_menu_opcoes()
+
         while True:
-            os.system('cls')
-            sair = False
-            exibir_nome_app()
-            exibir_menu_opcoes()
-            while True:
-                opc = escolher_opcao()
-                match opc:
-                    case 1:
-                        exibir_subtitulo("Cadastro de novos restaurantes")
-                        restaurante = cadastrar_restaurante()
-                        print(f"\n O restaurante {restaurante} foi cadastrado com sucesso!")
+            opc = escolher_opcao()
+
+            match opc:
+                case 1:
+                    exibir_subtitulo("Cadastro de novos restaurantes")
+                    restaurante = cadastrar_restaurante()
+                    print(f"\n O restaurante {restaurante} foi cadastrado com sucesso!")
+                    voltar_menu()
+                    break
+                case 2:
+                    exibir_subtitulo("Lista de restaurantes cadastrados")
+                    print("ID " + "| Nome do restaurante".ljust(22) + " | Categoria".ljust(23) + " | Status")
+                    listar_restaurantes()
+                    voltar_menu()
+                    break
+                case 3:
+                    exibir_subtitulo("Ativar restaurante")
+                    print("ID " + "| Nome do restaurante".ljust(22) + " | Categoria".ljust(23) + " | Status")
+                    vazio = listar_restaurantes()
+                    if vazio == "vazio":
                         voltar_menu()
                         break
-                    case 2:
-                        exibir_subtitulo("Lista de restaurantes cadastrados")
-                        print("Nome do restaurante".ljust(22) + " | Categoria".ljust(23) + " | Status")
-                        listar_restaurantes()
-                        voltar_menu()
-                        break
-                    case 3:
-                        exibir_subtitulo("Ativar restaurante")
-                        nome_restaurante = input("Digite o nome do restaurante que deseja alterar o status: ")
-                        status = alterar_status_restaurante(nome_restaurante)
+                    try:
+                        id_restaurante = int(input("\nDigite o ID do restaurante a ser ativado/desativado: "))
+                        status = alterar_status_restaurante(id_restaurante)
                         if status is not None:
-                            print(f"O restaurante {nome_restaurante} foi {'ativado' if status else 'desativado'} com sucesso!")
-                            voltar_menu()
-                            break
+                            print(f"O restaurante foi {'ativado' if status else 'desativado'} com sucesso!")
                         else:
                             print("Restaurante não encontrado.")
-                            voltar_menu()
-                            break
-                    case 4:
-                        sair = finalizar_app()
+                        voltar_menu()
                         break
-                    case False:
-                        print('Opção inválida!')
-                        continue
-
-            if sair:
-                break        
-            else:
-                continue
-    
-    
+                    except ValueError:
+                        print("ID inválido.")
+                        voltar_menu()
+                        break
+                case 4:
+                    exibir_subtitulo("Editar restaurante")
+                    print("ID " + "| Nome do restaurante".ljust(22) + " | Categoria".ljust(23) + " | Status")
+                    vazio = listar_restaurantes()
+                    if vazio == "vazio":
+                        voltar_menu()
+                        break
+                    try:
+                        menu_edicao()
+                        opcao_edicao = int(input("Escolha uma opção: "))
+                        match opcao_edicao:
+                            case 1:
+                                id_restaurante = int(input("\nDigite o ID do restaurante a ser editado: "))
+                                novo_nome = editar_restaurante_nome(id_restaurante)
+                                if novo_nome:
+                                    print("Restaurante editado com sucesso!")
+                                else:
+                                    print("Restaurante não encontrado.")
+                                voltar_menu()
+                                break
+                            case 2:
+                                id_restaurante = int(input("\nDigite o ID do restaurante a ser editado: "))
+                                nova_categoria = editar_restaurante_categoria(id_restaurante)
+                                if nova_categoria:
+                                    print("Restaurante editado com sucesso!")
+                                else:
+                                    print("Restaurante não encontrado.")
+                                voltar_menu()
+                                break
+                            case 3:
+                                break
+                    except ValueError:
+                        print("ID inválido.")
+                        voltar_menu()
+                        break
+                case 5:
+                    exibir_subtitulo("Excluir restaurante")
+                    print("ID " + "| Nome do restaurante".ljust(22) + " | Categoria".ljust(23) + " | Status")
+                    vazio = listar_restaurantes()
+                    if vazio == "vazio":
+                        voltar_menu()
+                        break
+                    try:
+                        id_restaurante = int(input("\nDigite o ID do restaurante a ser excluído: "))
+                        eliminado = eliminar_restaurante(id_restaurante)
+                        if eliminado:
+                            print(f"{eliminado} foi excluído com sucesso!")
+                        else:
+                            print("Restaurante não encontrado.")
+                        voltar_menu()
+                        break
+                    except ValueError:
+                        print("ID inválido.")
+                        voltar_menu()
+                        break
+                case 6:
+                    sair = finalizar_app()
+                    break
+                case False:
+                    print("Opção inválida!")
+                    continue
+        if sair:
+            break
 
 if __name__ == "__main__":
     main()
